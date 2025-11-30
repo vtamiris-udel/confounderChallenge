@@ -1,6 +1,6 @@
 ---
 title: "Confounder & Randomization Challenge"
-subtitle: "Recovering Lost Figures: Visualizing Confounders and Causal Inference"
+subtitle: "Using Randomization & Stratification to Overcome A Common Cause Confounder"
 format:
   html: default
 bibliography: references.bib
@@ -8,27 +8,6 @@ execute:
   echo: true
   eval: true
 ---
-
-:::: {.callout-important}
-## 📋 The Challenge: Recover the Lost Figures!
-
-A critical report on confounding and causal inference was being prepared when disaster struck—the figures were lost! The data files survived (`patients_data.csv` and `patients_data_randomized.csv`), and the narrative text is intact, but **all three key visualizations have disappeared**.
-
-Your mission: **Recover the lost figures** by reading the narrative carefully and creating compelling visualizations that match the story being told. The figures must be:
-
-- **Figure 1**: Post-surgical outcomes by patient (observational data)
-- **Figure 2**: Post-surgical outcomes for randomized patients  
-- **Figure 3**: Post-surgical outcomes by patient severity (stratification)
-
-Use the text descriptions, statistical results, and your understanding of visualization best practices to recreate these figures. Your figures should be professional, colorblind-friendly, and tell the story clearly.
-
-**Grading:** Completing the three figures correctly will earn you 85% of the grade. To earn the final 15% (for a total of 100%), you must make it feel like a complete, professional report rather than a challenge assignment
-::::
-
-:::: {.callout-warning}
-## ⚠️ AI Partnership Required
-Use Cursor AI for speed, but ensure you understand and can explain your visualizations in your own words. The goal is to create figures that match the narrative and statistical insights described in the text.
-::::
 
 ## The Paradox: Who *Really* Is the Better Surgeon?
 
@@ -48,7 +27,7 @@ Counterintuitively, the surgeon who doesn't "look the part" may actually be the 
 
 ```{python}
 #| label: simulate-data
-#| echo: true
+#| echo: false
 #| message: false
 #| warning: false
 #| include: false
@@ -98,95 +77,88 @@ patients_df[['patient', 'severity', 'doctor_id', 'doctor_name', 'post_surgical_s
 patients_df.head()
 ```
 
-::: {.panel-tabset}
-## Python
-
-```{python}
-#| label: load-data-python
-#| echo: true
-
-import pandas as pd
-
-# Load the observational data
-patients_df = pd.read_csv('patients_data.csv')
-
-# Display first few rows to understand the structure
-print(f"Number of patients: {len(patients_df)}")
-patients_df.head()
-```
-
-## R
-
-```{r}
-#| label: load-data-r
-#| echo: true
-
-# Load the observational data
-patients_df <- read.csv('patients_data.csv')
-
-# Display first few rows to understand the structure
-cat("Number of patients:", nrow(patients_df), "\n")
-head(patients_df)
-```
-:::
-
 Let's use data to figure out which surgeon performs better. @fig-plot-outcomes shows the post-surgical symptom score for 100 patients. Doc Duck's average post-surgical symptom score is 3.38 while Doc Dreamy's average is 2.8. Doc Dreamy performs better since lower scores indicate better outcomes. One might ask if the difference in average post-surgical symptom score is statistically significant. A two-sample t-test reveals a statistically significant difference (t = -2.317, p = 0.023). 
-
-### Challenge Task 1: Recover Figure 1 — Post-Surgical Outcomes by Patient
-
-**Your task:** Create a scatter plot showing post-surgical symptom scores by patient number, with different markers/colors for each doctor. The figure should include:
-
-- Scatter points for each patient (Doc Dreamy: circles, Doc Duck: triangles)
-- Horizontal dashed lines showing the mean for each doctor
-- Text annotations showing the mean values with shape symbols (○ for Doc Dreamy, △ for Doc Duck)
-- Colorblind-friendly colors (blue for Doc Dreamy, coral/red-orange for Doc Duck)
-- Professional styling: clear labels, grid, legend, appropriate font sizes
-- X-axis: Patient Number
-- Y-axis: Post-Surgical Symptom Score (Lower is Better)
-- Title: "Post-Surgical Symptom Score by Patient and Doctor"
-
-::: {.panel-tabset}
-## Python
 
 ```{python}
 #| label: fig-plot-outcomes
 #| fig-cap: "Post-Surgical Symptom Score (lower is better) - Observed Data"
-#| echo: true
+#| echo: false
 
-# TODO: Recover Figure 1 - Post-surgical outcomes by patient
-# Load data (already loaded above)
-# Create scatter plot with:
-#   - Different markers for each doctor (circles vs triangles)
-#   - Colorblind-friendly colors
-#   - Mean lines and annotations
-#   - Professional styling
+import matplotlib.pyplot as plt
 
-# Hint: Use matplotlib object-oriented style (fig, ax = plt.subplots())
-# Colors: Doc Dreamy = '#4E79A7' (blue), Doc Duck = '#E15759' (coral/red-orange)
+# Colorblind-friendly palette
+dreamy_color = "#4E79A7"  # blue
+duck_color = "#E15759"    # coral/red-orange
+
+# Split data by doctor for plotting and summary lines
+dreamy_mask = patients_df["doctor_name"] == "Doc Dreamy"
+duck_mask = patients_df["doctor_name"] == "Doc Duck"
+
+dreamy_mean = patients_df.loc[dreamy_mask, "post_surgical_score"].mean()
+duck_mean = patients_df.loc[duck_mask, "post_surgical_score"].mean()
+
+fig, ax = plt.subplots(figsize=(7, 5.5))
+
+# Scatter points by doctor
+ax.scatter(
+    patients_df.loc[dreamy_mask, "patient"],
+    patients_df.loc[dreamy_mask, "post_surgical_score"],
+    label="Doc Dreamy",
+    color=dreamy_color,
+    edgecolor="white",
+    linewidth=0.6,
+    marker="o",
+    s=55,
+    alpha=0.9,
+)
+ax.scatter(
+    patients_df.loc[duck_mask, "patient"],
+    patients_df.loc[duck_mask, "post_surgical_score"],
+    label="Doc Duck",
+    color=duck_color,
+    edgecolor="white",
+    linewidth=0.6,
+    marker="^",
+    s=60,
+    alpha=0.9,
+)
+
+# Mean lines
+ax.axhline(dreamy_mean, color=dreamy_color, linestyle="--", linewidth=1.4, alpha=0.9)
+ax.axhline(duck_mean, color=duck_color, linestyle="--", linewidth=1.4, alpha=0.9)
+
+# Mean annotations with requested symbols
+ax.text(
+    101.5,
+    dreamy_mean,
+    f"○ Doc Dreamy mean = {dreamy_mean:.2f}",
+    color=dreamy_color,
+    va="center",
+    fontsize=11,
+    fontweight="bold",
+)
+ax.text(
+    101.5,
+    duck_mean,
+    f"△ Doc Duck mean = {duck_mean:.2f}",
+    color=duck_color,
+    va="center",
+    fontsize=11,
+    fontweight="bold",
+)
+
+# Styling
+ax.set_xlim(0.5, 105)
+ax.set_title("Post-Surgical Symptom Score by Patient and Doctor", fontsize=14, weight="bold")
+ax.set_xlabel("Patient Number", fontsize=12)
+ax.set_ylabel("Post-Surgical Symptom Score (Lower is Better)", fontsize=12)
+ax.grid(True, linestyle=":", alpha=0.55)
+ax.legend(title="Doctor", frameon=False, fontsize=10, title_fontsize=11, loc="upper right")
+
+plt.tight_layout()
 
 ```
 
-## R
-
-```{r}
-#| label: fig-plot-outcomes-r
-#| fig-cap: "Post-Surgical Symptom Score (lower is better) - Observed Data"
-#| echo: true
-
-# TODO: Recover Figure 1 - Post-surgical outcomes by patient
-# Load data (already loaded above)
-# Create scatter plot with ggplot2 or base R
-# Include:
-#   - Different shapes for each doctor
-#   - Colorblind-friendly colors
-#   - Mean lines and annotations
-#   - Professional styling
-
-# Hint: Use ggplot2 for professional plots
-# Colors: Doc Dreamy = '#4E79A7' (blue), Doc Duck = '#E15759' (coral/red-orange)
-
-```
-:::
 
 ## The Hidden Confounder: Patient Severity Explains It All
 
@@ -231,7 +203,7 @@ Since we cannot rerun history with randomization, we run an experiment to collec
 
 ```{python}
 #| label: simulate-data-randomized
-#| echo: true
+#| echo: false
 #| message: false
 #| warning: false
 #| include: false
@@ -277,138 +249,183 @@ patients_randomized_df[['patient', 'severity', 'doctor_id', 'doctor_name', 'post
 patients_randomized_df.head()
 ```
 
-::: {.panel-tabset}
-## Python
-
-```{python}
-#| label: load-data-randomized-python
-#| echo: true
-
-import pandas as pd
-
-# Load the randomized data
-patients_randomized_df = pd.read_csv('patients_data_randomized.csv')
-
-# Display first few rows
-print(f"Number of randomized patients: {len(patients_randomized_df)}")
-patients_randomized_df.head()
-```
-
-## R
-
-```{r}
-#| label: load-data-randomized-r
-#| echo: true
-
-# Load the randomized data
-patients_randomized_df <- read.csv('patients_data_randomized.csv')
-
-# Display first few rows
-cat("Number of randomized patients:", nrow(patients_randomized_df), "\n")
-head(patients_randomized_df)
-```
-:::
-
 @fig-plot-outcomes-randomized shows the post-surgical symptom score for 100 patients under randomized assignment. Doc Duck's average post-surgical symptom score is 2.71 while Doc Dreamy's average is 3.46. Doc Duck performs better since lower scores indicate better outcomes. With randomization breaking the confounding relationship, we can now properly assess the causal effect. A two-sample t-test reveals a statistically significant difference (t = 2.734, p = 0.007).  **Not only is Dr. Dreamy not the better surgeon, he is actually the worse surgeon!**
 
-### Challenge Task 2: Recover Figure 2 — Randomized Assignment Outcomes
 
-**Your task:** Create a scatter plot similar to Figure 1, but for the randomized data. The figure should show how randomization breaks the confounding relationship. Include:
-
-- Same styling as Figure 1 (markers, colors, mean lines, annotations)
-- Title should indicate this is randomized assignment
-- Same colorblind-friendly color scheme
-- Professional styling consistent with Figure 1
-
-::: {.panel-tabset}
-## Python
 
 ```{python}
 #| label: fig-plot-outcomes-randomized
 #| fig-cap: "Post-Surgical Symptom Score (lower is better) for randomized patients."
-#| echo: true
+#| echo: false
 
-# TODO: Recover Figure 2 - Randomized assignment outcomes
-# Load randomized data (already loaded above)
-# Create scatter plot similar to Figure 1
-# Use same styling and color scheme
-# Title: "Post-Surgical Symptom Score (Randomized Assignment)"
+import matplotlib.pyplot as plt
+
+# Colorblind-friendly palette (matching Figure 1)
+dreamy_color = "#4E79A7"
+duck_color = "#E15759"
+
+# Split data by doctor
+dreamy_mask_rand = patients_randomized_df["doctor_name"] == "Doc Dreamy"
+duck_mask_rand = patients_randomized_df["doctor_name"] == "Doc Duck"
+
+dreamy_mean_rand = patients_randomized_df.loc[dreamy_mask_rand, "post_surgical_score"].mean()
+duck_mean_rand = patients_randomized_df.loc[duck_mask_rand, "post_surgical_score"].mean()
+
+fig, ax = plt.subplots(figsize=(7, 5.5))
+
+# Scatter points by doctor
+ax.scatter(
+    patients_randomized_df.loc[dreamy_mask_rand, "patient"],
+    patients_randomized_df.loc[dreamy_mask_rand, "post_surgical_score"],
+    label="Doc Dreamy",
+    color=dreamy_color,
+    edgecolor="white",
+    linewidth=0.6,
+    marker="o",
+    s=55,
+    alpha=0.9,
+)
+ax.scatter(
+    patients_randomized_df.loc[duck_mask_rand, "patient"],
+    patients_randomized_df.loc[duck_mask_rand, "post_surgical_score"],
+    label="Doc Duck",
+    color=duck_color,
+    edgecolor="white",
+    linewidth=0.6,
+    marker="^",
+    s=60,
+    alpha=0.9,
+)
+
+# Mean lines
+ax.axhline(dreamy_mean_rand, color=dreamy_color, linestyle="--", linewidth=1.4, alpha=0.9)
+ax.axhline(duck_mean_rand, color=duck_color, linestyle="--", linewidth=1.4, alpha=0.9)
+
+# Mean annotations
+ax.text(
+    101.5,
+    dreamy_mean_rand,
+    f"○ Doc Dreamy mean = {dreamy_mean_rand:.2f}",
+    color=dreamy_color,
+    va="center",
+    fontsize=10.5,
+    fontweight="bold",
+)
+ax.text(
+    101.5,
+    duck_mean_rand,
+    f"△ Doc Duck mean = {duck_mean_rand:.2f}",
+    color=duck_color,
+    va="center",
+    fontsize=10.5,
+    fontweight="bold",
+)
+
+# Styling to mirror Figure 1
+ax.set_xlim(0.5, 105)
+ax.set_title("Post-Surgical Symptom Score by Patient (Randomized Assignment)", fontsize=14, weight="bold")
+ax.set_xlabel("Patient Number", fontsize=12)
+ax.set_ylabel("Post-Surgical Symptom Score (Lower is Better)", fontsize=12)
+ax.grid(True, linestyle=":", alpha=0.55)
+ax.legend(title="Doctor", frameon=False, fontsize=10, title_fontsize=11, loc="upper right")
+
+plt.tight_layout()
 
 ```
 
-## R
-
-```{r}
-#| label: fig-plot-outcomes-randomized-r
-#| fig-cap: "Post-Surgical Symptom Score (lower is better) for randomized patients."
-#| echo: true
-
-# TODO: Recover Figure 2 - Randomized assignment outcomes
-# Load randomized data (already loaded above)
-# Create scatter plot similar to Figure 1
-# Use same styling and color scheme
-
-```
-:::
 
 ## Solution 2: Stratification — When You Can't Randomize
 
 The key to handling a common cause confounder is to stratify by the common cause. In general, this means we examine the relationship between treatment and outcome within groups that share the same value of the confounder. In our example, this means we look at patients of similar severity and compare the outcomes of the surgeons for patients of similar severity. There are mathematically sophisticated ways to do this, but here we demonstrate it visually. Since patient number lacks inherent meaning, the following figure shows patient severity on the x-axis and post-surgical symptom score on the y-axis.  
 
-### Challenge Task 3: Recover Figure 3 — Outcomes by Patient Severity (Stratification)
 
-**Your task:** Create a scatter plot showing post-surgical outcomes as a function of initial patient severity. This figure demonstrates the power of stratification. Include:
-
-- X-axis: Initial Patient Severity
-- Y-axis: Post-Surgical Symptom Score (Lower is Better)
-- Scatter points colored/marked by doctor (same scheme as previous figures)
-- Mean horizontal lines for each doctor
-- A rectangular overlay (shaded region) highlighting severity between -1 and 1
-- Text annotations for means positioned appropriately
-- Title: "Post-Surgical Symptom Score by Patient Severity"
-- This figure should reveal the confounding by showing how severity affects both surgeon assignment and outcomes
-
-::: {.panel-tabset}
-## Python
 
 ```{python}
 #| label: fig-plot-outcomes-severity
 #| fig-cap: "Post-Surgical Symptom Score (lower is better) by Patient and Severity"
-#| echo: true
+#| echo: false
 
-# TODO: Recover Figure 3 - Outcomes by patient severity (stratification)
-# Load observational data (already loaded above)
-# Create scatter plot with:
-#   - X-axis: Initial Patient Severity
-#   - Y-axis: Post-Surgical Symptom Score
-#   - Same color/marker scheme as previous figures
-#   - Mean lines and annotations
-#   - Shaded region from -1 to 1 on x-axis (use ax.axvspan or similar)
-#   - Professional styling
+import matplotlib.pyplot as plt
 
-# Hint: Use axvspan(-1, 1, alpha=0.15, color='gray', zorder=0) for the overlay
+# Colors (consistent with Figures 1 and 2)
+dreamy_color = "#4E79A7"
+duck_color = "#E15759"
+
+dreamy_mask = patients_df["doctor_name"] == "Doc Dreamy"
+duck_mask = patients_df["doctor_name"] == "Doc Duck"
+
+dreamy_mean = patients_df.loc[dreamy_mask, "post_surgical_score"].mean()
+duck_mean = patients_df.loc[duck_mask, "post_surgical_score"].mean()
+
+severity_min, severity_max = patients_df["severity"].min(), patients_df["severity"].max()
+severity_span = severity_max - severity_min
+x_buffer = max(0.6, severity_span * 0.08)
+text_x = severity_max + x_buffer * 0.9
+
+fig, ax = plt.subplots(figsize=(7, 5.5))
+
+# Highlight overlap region for stratification
+ax.axvspan(-1, 1, alpha=0.15, color="gray", zorder=0)
+
+# Scatter points by doctor
+ax.scatter(
+    patients_df.loc[dreamy_mask, "severity"],
+    patients_df.loc[dreamy_mask, "post_surgical_score"],
+    label="Doc Dreamy",
+    color=dreamy_color,
+    edgecolor="white",
+    linewidth=0.6,
+    marker="o",
+    s=55,
+    alpha=0.9,
+)
+ax.scatter(
+    patients_df.loc[duck_mask, "severity"],
+    patients_df.loc[duck_mask, "post_surgical_score"],
+    label="Doc Duck",
+    color=duck_color,
+    edgecolor="white",
+    linewidth=0.6,
+    marker="^",
+    s=60,
+    alpha=0.9,
+)
+
+# Mean lines
+ax.axhline(dreamy_mean, color=dreamy_color, linestyle="--", linewidth=1.4, alpha=0.9)
+ax.axhline(duck_mean, color=duck_color, linestyle="--", linewidth=1.4, alpha=0.9)
+
+# Mean annotations
+ax.text(
+    text_x,
+    dreamy_mean,
+    f"○ Doc Dreamy mean = {dreamy_mean:.2f}",
+    color=dreamy_color,
+    va="center",
+    fontsize=10.5,
+    fontweight="bold",
+)
+ax.text(
+    text_x,
+    duck_mean,
+    f"△ Doc Duck mean = {duck_mean:.2f}",
+    color=duck_color,
+    va="center",
+    fontsize=10.5,
+    fontweight="bold",
+)
+
+# Styling
+ax.set_xlim(severity_min - x_buffer, severity_max + x_buffer * 1.6)
+ax.set_title("Post-Surgical Symptom Score by Patient Severity", fontsize=14, weight="bold")
+ax.set_xlabel("Initial Patient Severity", fontsize=12)
+ax.set_ylabel("Post-Surgical Symptom Score (Lower is Better)", fontsize=12)
+ax.grid(True, linestyle=":", alpha=0.55)
+ax.legend(title="Doctor", frameon=False, fontsize=10, title_fontsize=11, loc="upper right")
+
+plt.tight_layout()
 
 ```
-
-## R
-
-```{r}
-#| label: fig-plot-outcomes-severity-r
-#| fig-cap: "Post-Surgical Symptom Score (lower is better) by Patient and Severity"
-#| echo: true
-
-# TODO: Recover Figure 3 - Outcomes by patient severity (stratification)
-# Load observational data (already loaded above)
-# Create scatter plot with:
-#   - X-axis: Initial Patient Severity
-#   - Y-axis: Post-Surgical Symptom Score
-#   - Same color/marker scheme as previous figures
-#   - Mean lines and annotations
-#   - Shaded region from -1 to 1 on x-axis
-#   - Professional styling
-
-```
-:::
 
 Looking at @fig-plot-outcomes-severity, the value of stratifying by severity is visually most obvious with initial patient severity scores between -1 and 1 (highlighted in the overlay). We chose this region because it shows substantial overlap between the two surgeons—both surgeons have considerable data within this range, making it an ideal region for comparing their performance. Outside of this range, there is less data available for making direct comparisons: Doc Duck sees more of the higher-severity patients (severity > 1), while Doc Dreamy sees more of the lower-severity patients (severity < -1).
 
@@ -427,40 +444,3 @@ Randomization is an excellent defense against this kind of confounding. Flip a c
 If you can't randomize, and that's most of the time, you stratify. Look within groups of similar patient severity. Compare apples to apples, not apples to oranges. It's more work, and it's less satisfying than a clean randomized trial, but it's better than being fooled by confounding.
 
 The take-home lesson: The world is messy, and the numbers will mislead you if you let them. But if you understand the structure of the problem, if you draw the DAG and think about what causes what, you can defend yourself against being fooled. Randomization when you can, stratification when you can't. The tools are simple. The hard part is remembering to use them.
-
-## Professional Presentation Guidelines
-
-- **Clear narrative:** Your figures should tell the story described in the text
-- **Consistent styling:** All three figures should use the same color scheme and styling approach
-- **Colorblind-friendly:** Use the specified colors (#4E79A7 for Doc Dreamy, #E15759 for Doc Duck)
-- **Professional quality:** Clear labels, appropriate fonts, grid lines, legends
-- **Match the narrative:** Your figures should illustrate the points made in the text about confounding, randomization, and stratification
-
-## Submission Checklist ✅
-
-**For 85% (Base Grade):**
-
-- [ ] Fork the `confounderChallenge` repository
-- [ ] Clone locally and open in Cursor
-- [ ] Recover all three figures (Tasks 1-3)
-- [ ] Ensure figures match the narrative descriptions
-- [ ] Render to HTML (`quarto render` or Render button)
-- [ ] Verify all figures render correctly
-- [ ] Push HTML to your repo and enable GitHub Pages
-- [ ] Share your site: `https://[your-username].github.io/confounderChallenge/`
-
-**For Final 15% (Bonus - 100% Total):**
-
-- [ ] Remove all challenge-related comments from code (no "TODO", "Challenge Task", "Recover Figure")
-- [ ] Transform document title/subtitle to "Using Randomization & Stratification to Overcome A Common Cause Confounder"
-- [ ] Remove challenge framing sections (challenge callout, submission checklist, tips)
-- [ ] Polish the document to read like a complete, professional report
-- [ ] Ensure the narrative flows naturally without challenge references
-
-## Tips
-
-- Read the narrative carefully—it contains hints about what each figure should show
-- Use the statistical results mentioned in the text to verify your figures are correct
-- Keep styling consistent across all three figures
-- Test with both R and Python code chunks if you want to show versatility
-- Set random seeds if you're doing any additional analysis for reproducibility
